@@ -61,4 +61,18 @@ namespace utils
         using storage_t = typename std::aligned_storage<Length, Alignment>::type;
         storage_t storage_;
     };
+
+#ifdef NDEBUG
+    template <typename T>
+    constexpr T length(T, T const value)
+    {
+        return value;
+    }
+#else
+    template <typename T>
+    constexpr T length(T const value, T)
+    {
+        return value;
+    }
+#endif
 }
