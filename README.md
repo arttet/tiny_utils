@@ -1,6 +1,6 @@
 # TinyUtils
 
-[![Build Status](https://dev.azure.com/arttet/arttet/_apis/build/status/arttet.utils?branchName=master)](https://dev.azure.com/arttet/arttet/_build/latest?definitionId=2&branchName=master)
+[![Build Status](https://dev.azure.com/arttet/arttet/_apis/build/status/arttet.tiny_utils?branchName=master)](https://dev.azure.com/arttet/arttet/_build/latest?definitionId=3&branchName=master)
 
 A header-only library of modern C++ idioms
 
