@@ -1,0 +1,92 @@
+parameters:
+- name: configuration
+  type: string
+  default: RelWithDebInfo
+  values:
+  - Debug
+  - Release
+  - RelWithDebInfo
+  - MinSizeRel
+
+- name: compiler
+  type: string
+  default: gcc
+  values:
+  - gcc
+  - clang
+
+- name: CC
+  type: string
+  default: clang-10
+  values:
+  - gcc-10
+  - clang-10
+
+- name: CXX
+  type: string
+  default: clang++-10
+  values:
+  - g++-10
+  - clang++-10
+
+- name: platform
+  type: string
+  default: x86_64
+  values:
+  - x86
+  - x86_64
+  - armv7
+  - armv8
+
+- name: version
+  type: string
+  default: 10
+  values:
+  - 9
+  - 10
+
+
+steps:
+- script: |-
+    python3 -m pip install --upgrade conan
+
+    sudo apt update && sudo apt install -y g++-9 gcc-9-multilib g++-9-multilib ninja-build
+
+    if [ "$(compiler)" = "clang" ]; then
+      sudo apt install -y clang-10 clang-tidy-10 iwyu
+    fi
+  displayName: 'Install requirements'
+
+- script: >-
+    source ~/.profile
+
+    if [ "$(CC)" = "clang-10" ]; then clang_tidy="clang-tidy-10"; iwyu="/usr/bin/iwyu"; fi
+
+    conan install .
+    -if=build
+    -s arch=$(platform)
+    -s compiler=$(compiler)
+    -s compiler.cppstd=14
+    -s compiler.version=$(version)
+    -s compiler.libcxx=libstdc++11
+    -s build_type=$(configuration)
+    -o clang_tidy=$clang_tidy
+    -o iwyu=$iwyu
+    -o header_only=False
+    -o with_tests=True
+    -b outdated
+    -e CONAN_CMAKE_GENERATOR=Ninja
+    -e CC=$(CC)
+    -e CXX=$(CXX)
+  displayName: 'Install dependencies'
+
+- script: |-
+    source ~/.profile
+    conan build ..
+  displayName: 'Compilation'
+  workingDirectory: build
+
+- script: ctest -C $(configuration) --output-on-failure --repeat-until-fail 2
+  displayName: 'Testing'
+  workingDirectory: build
+  condition: and(succeeded(), in(variables['platform'], 'x86', 'x86_64'))

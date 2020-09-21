@@ -1,0 +1,87 @@
+parameters:
+- name: configuration
+  type: string
+  default: RelWithDebInfo
+  values:
+  - Debug
+  - Release
+  - RelWithDebInfo
+  - MinSizeRel
+
+- name: platform
+  type: string
+  default: x86_64
+  values:
+  - x86
+  - x86_64
+  - armv7
+  - armv8
+
+- name: toolset
+  type: string
+  default: v142
+  values:
+  - v140
+  - v141
+  - v142
+  - ClangCL
+
+
+steps:
+- script: |-
+    python -m pip install --upgrade conan
+    choco install cppcheck
+  displayName: 'Install requirements'
+
+- bash: |-
+    if [ "$(configuration)" = "Debug" ]; then runtime="MTd"; else runtime="MT"; fi
+
+    if [ "$(toolset)" = "ClangCL" ]; then
+      CMAKE_C_COMPILER="$PROGRAMFILES (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin\clang-cl.exe"
+      CMAKE_CXX_COMPILER="$PROGRAMFILES (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin\clang-cl.exe"
+
+      if [ "$(platform)" = "x86" ]; then flags="-m32"; else flags="-m64"; fi
+
+      conan install . \
+      -if=build \
+      -s arch=$(platform) \
+      -s compiler=clang \
+      -s compiler.cppstd=14 \
+      -s compiler.version=10 \
+      -s compiler.runtime=$runtime \
+      -s build_type=$(configuration) \
+      -o header_only=False \
+      -o clang_tidy="$PROGRAMFILES (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin\clang-tidy.exe" \
+      -o cppcheck="$PROGRAMFILES\Cppcheck\cppcheck.exe" \
+      -o with_tests=True \
+      -b outdated \
+      -e CC="$PROGRAMFILES (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin\clang-cl.exe" \
+      -e CXX="$PROGRAMFILES (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin\clang-cl.exe" \
+      -e CONAN_CMAKE_GENERATOR=Ninja \
+      -e CFLAGS=$flags \
+      -e CXXFLAGS=$flags
+    else
+      conan install . \
+      -if=build \
+      -s arch=$(platform) \
+      -s compiler="Visual Studio" \
+      -s compiler.cppstd=14 \
+      -s compiler.version=16 \
+      -s compiler.toolset=$(toolset) \
+      -s compiler.runtime=$runtime \
+      -s build_type=$(configuration) \
+      -o header_only=False \
+      -o cppcheck="$PROGRAMFILES\Cppcheck\cppcheck.exe" \
+      -o with_tests=True \
+      -b outdated
+    fi
+  displayName: 'Install dependencies'
+
+- script: conan build ..
+  displayName: 'Compilation'
+  workingDirectory: build
+
+- script: ctest -C $(configuration) --output-on-failure --repeat-until-fail 2
+  displayName: 'Testing'
+  workingDirectory: build
+  condition: and(succeeded(), in(variables['platform'], 'x86', 'x86_64'))

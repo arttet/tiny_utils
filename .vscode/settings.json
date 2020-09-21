@@ -1,0 +1,24 @@
+{
+    "cmake.generator": "Ninja",
+
+    // "cmake.generator": "Visual Studio 16 2019",
+    // "cmake.toolset": "v142",
+    // "cmake.platform": "x64",
+
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.configureSettings": {
+        "WITH_DOC": true,
+        "WITH_TESTS": true
+    },
+    "cmake.loggingLevel": "info",
+    "files.associations": {
+        "xstring": "cpp",
+        "xlocale": "cpp",
+        "xtr1common": "cpp",
+        "xloctime": "cpp",
+        "functional": "cpp",
+        "system_error": "cpp",
+        "type_traits": "cpp",
+        "xlocmon": "cpp"
+    }
+}

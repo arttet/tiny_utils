@@ -1,0 +1,59 @@
+parameters:
+- name: configuration
+  type: string
+  default: RelWithDebInfo
+  values:
+  - Debug
+  - Release
+  - RelWithDebInfo
+  - MinSizeRel
+
+- name: platform
+  type: string
+  default: x86_64
+  values:
+  - x86_64
+
+- name: sanitize
+  type: string
+  default: address
+  values:
+  - address
+  - thread
+
+
+steps:
+- script: |-
+    python3 -m pip install --upgrade conan
+  # brew install cppcheck iwyu
+  displayName: 'Install requirements'
+
+- script: >-
+    conan install .
+    -if=build
+    -s arch=$(platform)
+    -s compiler=apple-clang
+    -s compiler.cppstd=14
+    -s compiler.version=11.0
+    -s compiler.libcxx=libc++
+    -s build_type=$(configuration)
+    -o header_only=False
+    -o with_tests=True
+    -b outdated
+    -e CFLAGS="-fsanitize=undefined -fsanitize=$(sanitize)"
+    -e CXXFLAGS="-fsanitize=undefined -fsanitize=$(sanitize)"
+    -e LDFLAGS="-fsanitize=undefined -fsanitize=$(sanitize)"
+  # -o cppcheck="cppcheck"
+  # -o iwyu="include-what-you-use"
+  displayName: 'Install dependencies'
+
+- script: conan build ..
+  displayName: 'Compilation'
+  workingDirectory: build
+
+- script: ctest -C $(configuration) --output-on-failure --repeat-until-fail 2
+  displayName: 'Testing'
+  workingDirectory: build
+  condition: and(succeeded(), in(variables['platform'], 'x86', 'x86_64'))
+  env:
+    UBSAN_OPTIONS: print_stacktrace=1

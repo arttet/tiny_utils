@@ -1,0 +1,106 @@
+# Doxyfile 1.8.20
+
+#---------------------------------------------------------------------------
+# Project related configuration options
+#---------------------------------------------------------------------------
+
+PROJECT_NAME           = "@CMAKE_PROJECT_NAME@"
+PROJECT_NUMBER         = @CMAKE_PROJECT_VERSION@
+OUTPUT_DIRECTORY       = @DOXYGEN_DOCDIR@
+
+MULTILINE_CPP_IS_BRIEF = YES
+PYTHON_DOCSTRING       = NO
+BUILTIN_STL_SUPPORT    = YES
+CPP_CLI_SUPPORT        = YES
+NUM_PROC_THREADS       = @_DOC_DOT_NUM_THREADS@
+
+#---------------------------------------------------------------------------
+# Build related configuration options
+#---------------------------------------------------------------------------
+
+EXTRACT_LOCAL_CLASSES  = NO
+EXTRACT_ANON_NSPACES   = YES
+HIDE_UNDOC_MEMBERS     = YES
+HIDE_UNDOC_CLASSES     = YES
+CASE_SENSE_NAMES       = YES
+SORT_GROUP_NAMES       = YES
+SORT_BY_SCOPE_NAME     = YES
+MAX_INITIALIZER_LINES  = 80
+
+SHOW_USED_FILES        = NO
+SHOW_FILES             = YES
+SHOW_NAMESPACES        = YES
+
+#---------------------------------------------------------------------------
+# Configuration options related to warning and progress messages
+#---------------------------------------------------------------------------
+
+WARN_NO_PARAMDOC       = YES
+
+#---------------------------------------------------------------------------
+# Configuration options related to the input files
+#---------------------------------------------------------------------------
+
+INPUT                  = @CMAKE_SOURCE_DIR@
+FILE_PATTERNS          = *.h \
+                         *.hpp \
+                         *.md
+RECURSIVE              = YES
+EXCLUDE                =
+EXCLUDE_PATTERNS       = */build/* \
+                         */tests/*
+
+USE_MDFILE_AS_MAINPAGE = README.md
+
+#---------------------------------------------------------------------------
+# Configuration options related to source browsing
+#---------------------------------------------------------------------------
+
+SOURCE_BROWSER         = NO
+STRIP_CODE_COMMENTS    = NO
+REFERENCES_LINK_SOURCE = NO
+VERBATIM_HEADERS       = NO
+
+#---------------------------------------------------------------------------
+# Configuration options related to the alphabetical class index
+#---------------------------------------------------------------------------
+
+IGNORE_PREFIX          = I \
+                         T
+
+#---------------------------------------------------------------------------
+# Configuration options related to the HTML output
+#---------------------------------------------------------------------------
+
+HTML_OUTPUT            = ./
+HTML_TIMESTAMP         = YES
+GENERATE_TREEVIEW      = YES
+EXT_LINKS_IN_WINDOW    = YES
+SEARCHENGINE           = NO
+
+#---------------------------------------------------------------------------
+# Configuration options related to the preprocessor
+#---------------------------------------------------------------------------
+
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = EXTRACT_DLLEXPORT=
+SKIP_FUNCTION_MACROS   = NO
+
+#---------------------------------------------------------------------------
+# Configuration options related to external references
+#---------------------------------------------------------------------------
+
+TAGFILES               = @_DOC_TAGFILES@
+EXTERNAL_GROUPS        = NO
+
+#---------------------------------------------------------------------------
+# Configuration options related to the dot tool
+#---------------------------------------------------------------------------
+
+HAVE_DOT               = YES
+DOT_NUM_THREADS        = @_DOC_DOT_NUM_THREADS@
+DOT_FONTNAME           = Arial
+COLLABORATION_GRAPH    = NO
+GROUP_GRAPHS           = NO
+INCLUDE_GRAPH          = NO
+INCLUDED_BY_GRAPH      = NO

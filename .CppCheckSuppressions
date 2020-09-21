@@ -1,0 +1,4 @@
+unmatchedSuppression:*
+missingIncludeSystem:*
+
+ConfigurationNotChecked:*gtest*

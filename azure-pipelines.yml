@@ -1,0 +1,186 @@
+stages:
+- stage: StyleCheck
+  displayName: 'Style Check'
+  jobs:
+  - job: ClangFormat
+    displayName: 'Clang Format'
+    pool:
+      vmImage: 'ubuntu-20.04'
+    steps:
+    - script: |
+        sudo apt update && sudo apt install -y clang-format-10 git-core
+        linter_errors=$(git-clang-format-10 --commit "HEAD~1" -q --diff | grep -v --color=never "no modified files to format" || true)
+        echo "$linter_errors"
+        if [ ! -z "$linter_errors" ]; then echo "Detected formatting issues; please fix"; exit 1; else echo "Formatting is correct"; exit 0; fi
+      displayName: 'Clang Format'
+
+
+- stage: Build
+  jobs:
+  - job: Windows
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+      - template: .github/windows.yml
+    strategy:
+      matrix:
+        Clang x86 RelWithDebInfo:
+          configuration: RelWithDebInfo
+          platform: x86
+          toolset: ClangCL
+
+        ${{ if or(eq(variables['Build.SourceBranchName'], 'master'), eq(variables['Build.Reason'], 'PullRequest')) }}:
+          MSVC 16 x86_64 Debug:
+            platform: x86_64
+            configuration: Debug
+            toolset: v142
+
+          MSVC 16 x86_64 Release:
+            platform: x86_64
+            configuration: Release
+            toolset: v142
+
+          Clang x86_64 Debug:
+            configuration: Debug
+            platform: x86_64
+            toolset: ClangCL
+
+          MSVC 16 armv7 RelWithDebInfo:
+            configuration: RelWithDebInfo
+            platform: armv7
+            toolset: v142
+
+          MSVC 16 armv8 RelWithDebInfo:
+            configuration: RelWithDebInfo
+            platform: armv8
+            toolset: v142
+
+  - job: Linux
+    pool:
+      vmImage: 'ubuntu-20.04'
+    steps:
+      - template: .github/linux.yml
+    strategy:
+      matrix:
+        GCC x86 RelWithDebInfo:
+          compiler: gcc
+          configuration: RelWithDebInfo
+          CC: gcc-9
+          CXX: g++-9
+          platform: x86
+          version: 9
+
+        Clang x86 RelWithDebInfo:
+          compiler: clang
+          configuration: RelWithDebInfo
+          CC: clang-10
+          CXX: clang++-10
+          platform: x86
+          version: 10
+
+        ${{ if or(eq(variables['Build.SourceBranchName'], 'master'), eq(variables['Build.Reason'], 'PullRequest')) }}:
+          GCC x86_64 Debug:
+            compiler: gcc
+            configuration: Debug
+            CC: gcc-9
+            CXX: g++-9
+            platform: x86_64
+            version: 9
+
+          Clang x86_64 Debug:
+            compiler: clang
+            configuration: Debug
+            CC: clang-10
+            CXX: clang++-10
+            platform: x86_64
+            version: 10
+
+          Clang x86_64 Release:
+            compiler: clang
+            configuration: Release
+            CC: clang-10
+            CXX: clang++-10
+            platform: x86_64
+            version: 10
+
+          GCC armv7 RelWithDebInfo:
+            compiler: gcc
+            configuration: RelWithDebInfo
+            CC: gcc-9
+            CXX: g++-9
+            platform: armv7
+            version: 9
+
+          GCC armv8 RelWithDebInfo:
+            compiler: gcc
+            configuration: RelWithDebInfo
+            CC: gcc-9
+            CXX: g++-9
+            platform: armv8
+            version: 9
+
+  - job: macOS
+    pool:
+      vmImage: 'macOS-latest'
+    steps:
+      - template: .github/mac.yml
+    strategy:
+      matrix:
+        Clang ASan x86_64 RelWithDebInfo:
+          configuration: RelWithDebInfo
+          platform: x86_64
+          sanitize: address
+
+        Clang TSan x86_64 RelWithDebInfo:
+          configuration: RelWithDebInfo
+          platform: x86_64
+          sanitize: thread
+
+        ${{ if or(eq(variables['Build.SourceBranchName'], 'master'), eq(variables['Build.Reason'], 'PullRequest')) }}:
+          Clang ASan x86_64 Debug:
+            configuration: Debug
+            platform: x86_64
+            sanitize: address
+
+          Clang TSan x86_64 Debug:
+            configuration: Debug
+            platform: x86_64
+            sanitize: thread
+
+          Clang ASan x86_64 Release:
+            configuration: Release
+            platform: x86_64
+            sanitize: address
+
+          Clang TSan x86_64 Release:
+            configuration: Release
+            platform: x86_64
+            sanitize: thread
+
+
+- stage: Deploy
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'master'))
+  jobs:
+  - job: Deploy
+    pool:
+      vmImage: 'ubuntu-20.04'
+    steps:
+    - script: |
+        python3 -m pip install --upgrade conan
+        source ~/.profile
+        sudo apt update && sudo apt install -y doxygen graphviz
+        conan install . -if=build -b=outdated -o with_doc=True
+        conan build . -bf=build
+        cd build
+        cpack -G ZIP
+      displayName: 'Generate the source package'
+
+    - task: CopyFiles@2
+      displayName: 'Copy Artifact'
+      inputs:
+        SourceFolder: build
+        Contents: '*.zip'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: drop'
